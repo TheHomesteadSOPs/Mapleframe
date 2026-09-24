@@ -18,3 +18,8 @@ Folders:
 
 openrouter_config.json holds the API key (same one as KidsBooksAutomation).
 Keep this file local — never paste the key into chat.
+
+Model: every job's "model" field should be "openai/gpt-image-2" — Ian's
+preference (cheaper than google/gemini-3-pro-image, which the first Game 1
+art batch used before this was set). Claude sets this by default for every
+new job it writes here going forward.

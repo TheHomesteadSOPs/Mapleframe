@@ -16,6 +16,11 @@ export const ART_KEYS = [
   'h01_nonna',
 ];
 
+// Decorative art loaded separately (not gameplay sprites): a .jpg, not
+// .png, so BootScene's generic `assets/td/<key>.png` loader won't find
+// it — load it explicitly with its own extension.
+export const MENU_BG_KEY = 'b01_kitchen_board';
+
 const failed = new Set();
 
 export function registerLoadFailure(key) { failed.add(key); }

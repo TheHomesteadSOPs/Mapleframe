@@ -4,7 +4,7 @@ import { platform } from '../platform/index.js';
 import { save } from '../systems/save.js';
 import { sfx } from '../systems/sfx.js';
 import { textStyle } from '../ui/widgets.js';
-import { ART_KEYS, registerLoadFailure } from '../systems/sprites.js';
+import { ART_KEYS, MENU_BG_KEY, registerLoadFailure } from '../systems/sprites.js';
 import { TOWER_DEFS, ENEMY_DEFS } from '../data/towerDefense.js';
 
 /**
@@ -26,6 +26,7 @@ export class BootScene extends Phaser.Scene {
     // Real art — any of these that 404 just fail quietly; see sprites.js.
     this.load.on('loaderror', (file) => registerLoadFailure(file.key));
     for (const key of ART_KEYS) this.load.image(key, `assets/td/${key}.png`);
+    this.load.image(MENU_BG_KEY, `assets/td/${MENU_BG_KEY}.jpg`);
   }
 
   create() {

@@ -4,6 +4,7 @@ import { save } from '../systems/save.js';
 import { sfx } from '../systems/sfx.js';
 import { upgrades, UPGRADE_DEFS } from '../systems/upgrades.js';
 import { button, textStyle, fmt, panel, burst } from '../ui/widgets.js';
+import { hasArt, MENU_BG_KEY } from '../systems/sprites.js';
 
 export class MenuScene extends Phaser.Scene {
   constructor() { super('Menu'); }
@@ -57,6 +58,12 @@ export class MenuScene extends Phaser.Scene {
   }
 
   drawBackdrop(W, H) {
+    if (hasArt(this, MENU_BG_KEY)) {
+      const bg = this.add.image(W / 2, H / 2, MENU_BG_KEY);
+      bg.setScale(Math.max(W / bg.width, H / bg.height));
+      this.add.rectangle(W / 2, H / 2, W, H, 0x10141c, 0.62); // legibility scrim
+      return;
+    }
     for (let i = 0; i < 10; i++) {
       const dot = this.add.circle(Phaser.Math.Between(0, W), Phaser.Math.Between(-H, H), Phaser.Math.Between(4, 9), GAME.colors.maple, 0.12);
       this.tweens.add({
