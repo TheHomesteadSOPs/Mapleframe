@@ -10,3 +10,9 @@ release/
 art-pipeline/jobs/
 art-pipeline/output/
 art-pipeline/results/
+
+# API keys — never commit these. Keep them local only.
+art-pipeline/openrouter_config.json
+**/*_config.json
+.env
+.env.*
