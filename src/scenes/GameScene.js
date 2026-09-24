@@ -9,6 +9,8 @@ import { textStyle, fmt, floatText, burst, shake, button } from '../ui/widgets.j
 import { PATH, TOWER_SLOTS, TOWER_DEFS, ENEMY_DEFS, towerStatsAtLevel, upgradeCost, MAX_TOWER_LEVEL, waveForIndex } from '../data/towerDefense.js';
 
 const NEXT_WAVE_DELAY_MS = 6000;
+const SPEED_STEPS = [1, 2, 3];
+const hex = (n) => '#' + n.toString(16).padStart(6, '0');
 
 export class GameScene extends Phaser.Scene {
   constructor() { super('Game'); }
@@ -29,6 +31,8 @@ export class GameScene extends Phaser.Scene {
     this.slots = [];         // { x, y, zone, built: null|{type,level}, art, pips }
     this.over = false;
     this.dmgMult = upgrades.value('towerDamage');
+    this.speedMult = 1;    // player-controlled game-speed multiplier (see buildHud)
+    this.gameNow = 0;      // internal clock that respects speedMult (this.time.now doesn't)
 
     this.precomputePath();
     this.drawBoard(W, H);
@@ -129,6 +133,14 @@ export class GameScene extends Phaser.Scene {
       save.write();
       setIcon();
     });
+
+    // Speed toggle — cycles 1x → 2x → 3x → 1x, speeds up enemies/towers/
+    // waves together so the whole run just plays out faster.
+    this.speedBtn = button(this, W - 76, 72, '1x ⏩', () => {
+      const i = SPEED_STEPS.indexOf(this.speedMult);
+      this.speedMult = SPEED_STEPS[(i + 1) % SPEED_STEPS.length];
+      this.speedBtn.setLabel(`${this.speedMult}x ⏩`);
+    }, { width: 96, height: 44, fontSize: 22, color: GAME.colors.panel });
   }
 
   buildTray(W, H) {
@@ -175,7 +187,8 @@ export class GameScene extends Phaser.Scene {
       const key = textureFor(this, def.sprite, `ph_${def.sprite}`);
       slot.art = this.add.image(slot.x, slot.y, key).setDepth(3);
       slot.art.setScale(Math.min(1, 60 / slot.art.width));
-      slot.pips = this.add.text(slot.x, slot.y + 40, '●', textStyle(14, GAME.colors.gold)).setOrigin(0.5).setDepth(3);
+      slot.pips = this.add.text(slot.x, slot.y + 40, '', textStyle(13, GAME.colors.gold)).setOrigin(0.5).setDepth(3);
+      this.updateSlotInfo(slot);
       sfx.play('upgrade');
       burst(this, slot.x, slot.y, def.color, 10);
       this.refreshHud();
@@ -186,11 +199,27 @@ export class GameScene extends Phaser.Scene {
       if (this.gold < cost) { this.flashNoGold(slot); return; }
       this.gold -= cost;
       slot.built.level += 1;
-      slot.pips.setText('●'.repeat(slot.built.level));
       slot.art.setScale(slot.art.scale * 1.12);
+      this.updateSlotInfo(slot);
       sfx.play('upgrade');
       burst(this, slot.x, slot.y, GAME.colors.gold, 16);
       this.refreshHud();
+    }
+  }
+
+  /** Keeps each built tower's level dots + next-upgrade cost visible and
+   *  colour-coded (white = affordable, red = can't afford yet, gold = maxed)
+   *  so players always know what an upgrade tap will cost. */
+  updateSlotInfo(slot) {
+    if (!slot.built || !slot.pips) return;
+    const { type, level } = slot.built;
+    const dots = '●'.repeat(level);
+    const cost = upgradeCost(type, level);
+    if (cost == null) {
+      slot.pips.setText(`${dots} MAX`).setColor(hex(GAME.colors.gold));
+    } else {
+      const afford = this.gold >= cost;
+      slot.pips.setText(`${dots} ⬆${fmt(cost)}`).setColor(hex(afford ? GAME.colors.cream : GAME.colors.maple));
     }
   }
 
@@ -202,7 +231,7 @@ export class GameScene extends Phaser.Scene {
   // ── Waves ───────────────────────────────────────────────
   scheduleNextWave(delayMs = NEXT_WAVE_DELAY_MS) {
     this.waveActive = false;
-    this.nextWaveAt = this.time.now + delayMs;
+    this.nextWaveAt = this.gameNow + delayMs;
     this.waveBanner.setText(`Next wave in ${Math.ceil(delayMs / 1000)}s`);
   }
 
@@ -214,7 +243,7 @@ export class GameScene extends Phaser.Scene {
     this.pendingSpawns = [];
     for (const group of wave.spawns) {
       for (let i = 0; i < group.count; i++) {
-        this.pendingSpawns.push({ at: this.time.now + group.delayMs + i * group.intervalMs, type: group.type });
+        this.pendingSpawns.push({ at: this.gameNow + group.delayMs + i * group.intervalMs, type: group.type });
       }
     }
     this.pendingSpawns.sort((a, b) => a.at - b.at);
@@ -277,15 +306,17 @@ export class GameScene extends Phaser.Scene {
   wavesScoreAdd(gold) { this.runGold = (this.runGold ?? 0) + gold; }
 
   // ── Main loop ───────────────────────────────────────────
-  update(_, dtMs) {
+  update(_, dtMsRaw) {
     if (this.over) return;
+    const dtMs = dtMsRaw * this.speedMult;
+    this.gameNow += dtMs;
 
     if (!this.waveActive) {
-      const remain = Math.max(0, this.nextWaveAt - this.time.now);
+      const remain = Math.max(0, this.nextWaveAt - this.gameNow);
       this.waveBanner.setText(`Next wave in ${Math.ceil(remain / 1000)}s`);
       if (remain <= 0) this.startWave();
     } else {
-      while (this.pendingSpawns.length && this.pendingSpawns[0].at <= this.time.now) {
+      while (this.pendingSpawns.length && this.pendingSpawns[0].at <= this.gameNow) {
         this.spawnEnemy(this.pendingSpawns.shift().type);
       }
       if (!this.pendingSpawns.length && this.enemies.every((e) => !e.alive)) {
@@ -354,6 +385,7 @@ export class GameScene extends Phaser.Scene {
     this.goldText.setText(`🪙 ${fmt(this.gold)}`);
     this.livesText.setText('♥ ' + this.lives);
     this.waveText.setText(`Wave ${this.waveIndex}`);
+    for (const slot of this.slots) this.updateSlotInfo(slot);
   }
 
   endRun() {
