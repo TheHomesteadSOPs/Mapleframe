@@ -1,0 +1,21 @@
+{
+  "name": "mapleframe",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "build:crazygames": "vite build --mode crazygames && node scripts/package.mjs crazygames",
+    "build:poki": "vite build --mode poki && node scripts/package.mjs poki",
+    "build:itch": "vite build --mode itch && node scripts/package.mjs itch",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "phaser": "^4.2.1"
+  },
+  "devDependencies": {
+    "adm-zip": "^0.6.1",
+    "vite": "^8.3.0"
+  }
+}
