@@ -3,3 +3,10 @@ dist/
 release/
 .DS_Store
 *.log
+
+# Art pipeline: job files + generated images are working files, not
+# something the repo needs to track. Final processed sprites live in
+# public/assets/td/ instead (committed normally).
+art-pipeline/jobs/
+art-pipeline/output/
+art-pipeline/results/

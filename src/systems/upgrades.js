@@ -1,35 +1,33 @@
 // ─────────────────────────────────────────────────────────────
-//  Upgrade system — the backbone of idle / launch / survivor games.
+//  Meta upgrade system — permanent, persists across runs, bought
+//  with coins earned from waves (converted from in-run gold at
+//  Game Over). This is the "idle" progression loop.
 //
-//  Define upgrades as data. Cost grows exponentially per level
-//  (the standard idle-game curve), value grows linearly or
-//  multiplicatively — tune `growth` and `step` per upgrade.
-//
-//    upgrades.level('leafSize')     → current level
-//    upgrades.value('leafSize')     → effective stat value
-//    upgrades.cost('leafSize')      → coins for next level
-//    upgrades.buy('leafSize')       → true if purchased
+//    upgrades.level('startGold')     → current level
+//    upgrades.value('startGold')     → effective stat value
+//    upgrades.cost('startGold')      → coins for next level
+//    upgrades.buy('startGold')       → true if purchased
 // ─────────────────────────────────────────────────────────────
 import { save } from './save.js';
 
 export const UPGRADE_DEFS = {
-  leafSize: {
-    label: 'Bigger Leaves',
-    desc: 'Leaves are easier to tap',
-    base: 10, growth: 1.6, max: 10,
-    value: (lvl) => 1 + lvl * 0.12,          // size multiplier
+  startGold: {
+    label: 'Pantry Stock',
+    desc: '+10 starting gold per run',
+    base: 15, growth: 1.55, max: 10,
+    value: (lvl) => 40 + lvl * 10,
   },
-  coinValue: {
-    label: 'Golden Touch',
-    desc: '+1 coin per leaf',
-    base: 25, growth: 1.8, max: 20,
-    value: (lvl) => 1 + lvl,                  // coins per leaf
+  towerDamage: {
+    label: "Nonna's Recipe",
+    desc: '+8% tower damage',
+    base: 30, growth: 1.7, max: 12,
+    value: (lvl) => 1 + lvl * 0.08,
   },
   extraLife: {
-    label: 'Extra Life',
+    label: 'Extra Helping',
     desc: 'Start with one more life',
-    base: 60, growth: 2.5, max: 3,
-    value: (lvl) => 3 + lvl,                  // starting lives
+    base: 80, growth: 2.4, max: 5,
+    value: (lvl) => 3 + lvl,
   },
 };
 

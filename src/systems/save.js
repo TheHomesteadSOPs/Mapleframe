@@ -16,6 +16,7 @@ const DEFAULTS = {
   schema: SCHEMA,
   coins: 0,
   bestScore: 0,
+  bestWave: 0,
   upgrades: {},            // e.g. { damage: 3, fireRate: 1 }
   settings: { muted: false },
   stats: { runs: 0, playSeconds: 0 },

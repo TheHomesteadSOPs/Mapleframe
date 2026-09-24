@@ -4,8 +4,8 @@
 // ─────────────────────────────────────────────────────────────
 
 export const GAME = {
-  id: 'template',            // used as the save-data key — change per game!
-  title: 'Mapleframe Template',
+  id: 'nonnas-kitchen',       // used as the save-data key — change per game!
+  title: "Nonna's Kitchen Defense", // working title — rename freely, see NOTES.md
   studio: 'Mapleframe Games',
   version: '0.1.0',
 

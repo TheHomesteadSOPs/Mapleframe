@@ -13,13 +13,13 @@ import { button, textStyle, fmt, panel, burst } from '../ui/widgets.js';
 export class GameOverScene extends Phaser.Scene {
   constructor() { super('GameOver'); }
 
-  create({ score = 0, coins = 0, newBest = false }) {
+  create({ waveReached = 0, coins = 0, newBest = false }) {
     const { width: W, height: H } = this.scale;
     panel(this, W / 2, H / 2, 640, 520);
 
-    this.add.text(W / 2, H / 2 - 200, newBest ? 'NEW BEST!' : 'GAME OVER',
-      textStyle(56, newBest ? GAME.colors.gold : GAME.colors.cream)).setOrigin(0.5);
-    this.add.text(W / 2, H / 2 - 130, `Score ${fmt(score)}`, textStyle(36)).setOrigin(0.5);
+    this.add.text(W / 2, H / 2 - 200, newBest ? 'NEW BEST!' : 'THE LASAGNA IS SAFE!',
+      textStyle(newBest ? 56 : 34, newBest ? GAME.colors.gold : GAME.colors.cream)).setOrigin(0.5);
+    this.add.text(W / 2, H / 2 - 130, `Reached wave ${fmt(waveReached)}`, textStyle(36)).setOrigin(0.5);
     const coinLine = this.add.text(W / 2, H / 2 - 80, `🪙 +${fmt(coins)}`, textStyle(32, GAME.colors.gold)).setOrigin(0.5);
 
     const dbl = button(this, W / 2, H / 2 + 10, '📺  Double coins', async () => {

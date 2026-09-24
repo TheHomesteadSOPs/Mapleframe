@@ -12,27 +12,27 @@ export class MenuScene extends Phaser.Scene {
     const { width: W, height: H } = this.scale;
     this.drawBackdrop(W, H);
 
-    this.add.text(W / 2, 110, GAME.title, textStyle(64, GAME.colors.cream)).setOrigin(0.5);
-    this.add.text(W / 2, 170, `by ${GAME.studio}`, textStyle(24, GAME.colors.muted)).setOrigin(0.5);
+    this.add.text(W / 2, 90, GAME.title, textStyle(50, GAME.colors.cream)).setOrigin(0.5);
+    this.add.text(W / 2, 140, `by ${GAME.studio}`, textStyle(22, GAME.colors.muted)).setOrigin(0.5);
 
-    this.coinText = this.add.text(W / 2, 230, '', textStyle(34, GAME.colors.gold)).setOrigin(0.5);
-    this.add.text(W / 2, 270, `Best: ${fmt(save.data.bestScore)}`, textStyle(22, GAME.colors.muted)).setOrigin(0.5);
+    this.coinText = this.add.text(W / 2, 195, '', textStyle(30, GAME.colors.gold)).setOrigin(0.5);
+    this.add.text(W / 2, 230, `Best wave: ${save.data.bestWave}`, textStyle(20, GAME.colors.muted)).setOrigin(0.5);
 
-    button(this, W / 2, 360, '▶  PLAY', () => this.scene.start('Game'), { width: 320, height: 84, fontSize: 38 });
+    button(this, W / 2, 310, '▶  DEFEND THE KITCHEN', () => this.scene.start('Game'),
+      { width: 420, height: 78, fontSize: 32 });
 
-    // Upgrade shop — shows the pattern every game in the portfolio will reuse.
-    panel(this, W / 2, 560, 1040, 200);
+    this.add.text(W / 2, 400, "Nonna's Pantry — permanent upgrades", textStyle(20, GAME.colors.muted)).setOrigin(0.5);
+    panel(this, W / 2, 560, 1080, 220);
     this.shop = Object.keys(UPGRADE_DEFS).map((id, i) => {
-      const x = W / 2 - 340 + i * 340;
-      this.add.text(x, 490, UPGRADE_DEFS[id].label, textStyle(24)).setOrigin(0.5);
-      const lvl = this.add.text(x, 522, '', textStyle(18, GAME.colors.muted)).setOrigin(0.5);
-      const btn = button(this, x, 590, '', () => {
-        if (upgrades.buy(id)) { sfx.play('upgrade'); burst(this, x, 590); this.refresh(); }
+      const x = W / 2 - 350 + i * 350;
+      this.add.text(x, 480, UPGRADE_DEFS[id].label, textStyle(24)).setOrigin(0.5);
+      const lvl = this.add.text(x, 512, '', textStyle(18, GAME.colors.muted)).setOrigin(0.5, 0.5).setWordWrapWidth(300, true);
+      const btn = button(this, x, 610, '', () => {
+        if (upgrades.buy(id)) { sfx.play('upgrade'); burst(this, x, 610); this.refresh(); }
       }, { width: 260, height: 64, fontSize: 24, color: 0x2f8f5b });
       return { id, lvl, btn };
     });
 
-    // Mute toggle (top-right)
     const mute = this.add.text(W - 30, 30, '', textStyle(34)).setOrigin(1, 0).setInteractive({ useHandCursor: true });
     const setIcon = () => mute.setText(save.data.settings.muted ? '🔇' : '🔊');
     setIcon();
@@ -48,7 +48,7 @@ export class MenuScene extends Phaser.Scene {
   }
 
   refresh() {
-    this.coinText.setText(`🪙 ${fmt(save.data.coins)}`);
+    this.coinText.setText(`🪙 ${fmt(save.data.coins)} pantry coins`);
     for (const { id, lvl, btn } of this.shop) {
       lvl.setText(`Lv ${upgrades.level(id)} · ${UPGRADE_DEFS[id].desc}`);
       if (upgrades.isMaxed(id)) btn.setLabel('MAX').setEnabled(false);
@@ -57,13 +57,11 @@ export class MenuScene extends Phaser.Scene {
   }
 
   drawBackdrop(W, H) {
-    // Drifting leaves in the background — cheap ambient motion.
-    for (let i = 0; i < 12; i++) {
-      const leaf = this.add.image(Phaser.Math.Between(0, W), Phaser.Math.Between(-H, H), 'leaf')
-        .setTint(GAME.colors.maple).setAlpha(0.12).setScale(Phaser.Math.FloatBetween(0.5, 1.2));
+    for (let i = 0; i < 10; i++) {
+      const dot = this.add.circle(Phaser.Math.Between(0, W), Phaser.Math.Between(-H, H), Phaser.Math.Between(4, 9), GAME.colors.maple, 0.12);
       this.tweens.add({
-        targets: leaf, y: H + 80, angle: 360, duration: Phaser.Math.Between(9000, 16000),
-        repeat: -1, onRepeat: () => { leaf.y = -80; leaf.x = Phaser.Math.Between(0, W); },
+        targets: dot, y: H + 40, duration: Phaser.Math.Between(9000, 16000),
+        repeat: -1, onRepeat: () => { dot.y = -40; dot.x = Phaser.Math.Between(0, W); },
       });
     }
   }
