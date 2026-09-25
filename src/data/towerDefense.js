@@ -22,8 +22,9 @@ export const TOWER_SLOTS = [
   { x: 380, y: 320 },  // ~100px
   { x: 460, y: 530 },  // ~90px
   { x: 730, y: 280 },  // ~110px
-  { x: 870, y: 555 },  // ~90px — moved in from (840,560)/~122px, was out of
-                        // range for rolling pins (range 130)
+  { x: 1060, y: 460 }, // ~80px — moved in from (840,560)/~122px (was out of
+                        // range for rolling pins), then off (870,555)/~90px
+                        // (visually overlapped the blender tray icon)
   { x: 1040, y: 320 }, // ~80px
   { x: 1120, y: 620 }, // ~80px
   { x: 700, y: 480 },  // ~90px — moved in from (780,590)/~187px, was out of
@@ -82,11 +83,13 @@ export function upgradeCost(id, level) {
 export const MAX_TOWER_LEVEL = LEVEL_MULT.length;
 
 // ── Enemies ─────────────────────────────────────────────────
+// Radii are 10% bigger than the original design (Ian's request) — e.g.
+// pizzarino was 22, 22*1.1=24.2 -> 24. Rounded to whole pixels.
 export const ENEMY_DEFS = {
-  pizzarino: { label: 'Pizzarino', sprite: 'e01_pizzarino', color: 0xe0582f, hp: 18, speed: 95, armor: 0, reward: 3, radius: 22 },
-  meatballino: { label: 'Meatballino', sprite: 'e02_meatballino', color: 0x8a4a2c, hp: 75, speed: 52, armor: 2, reward: 8, radius: 26 },
-  spaghetto: { label: 'Spaghetto', sprite: 'e03_spaghetto', color: 0xf2c94c, hp: 30, speed: 122, armor: 0, reward: 4, radius: 20 },
-  parmesano: { label: 'Parmesano', sprite: 'e04_parmesano', color: 0xe0c05a, hp: 320, speed: 38, armor: 5, reward: 30, radius: 36, boss: true },
+  pizzarino: { label: 'Pizzarino', sprite: 'e01_pizzarino', color: 0xe0582f, hp: 18, speed: 95, armor: 0, reward: 3, radius: 24 },
+  meatballino: { label: 'Meatballino', sprite: 'e02_meatballino', color: 0x8a4a2c, hp: 75, speed: 52, armor: 2, reward: 8, radius: 29 },
+  spaghetto: { label: 'Spaghetto', sprite: 'e03_spaghetto', color: 0xf2c94c, hp: 30, speed: 122, armor: 0, reward: 4, radius: 22 },
+  parmesano: { label: 'Parmesano', sprite: 'e04_parmesano', color: 0xe0c05a, hp: 320, speed: 38, armor: 5, reward: 30, radius: 40, boss: true },
 
   // ── Endless-mode variety (past wave 8) — not just bigger numbers.
   // Saucezilla splits into two fast Saucelings on death, so towers that
@@ -95,13 +98,13 @@ export const ENEMY_DEFS = {
   // so a wall built to counter one boss type struggles against the other.
   saucezilla: {
     label: 'Saucezilla', sprite: 'e05_saucezilla', color: 0xc0392b,
-    hp: 140, speed: 60, armor: 1, reward: 10, radius: 30,
+    hp: 140, speed: 60, armor: 1, reward: 10, radius: 33,
     splitOnDeath: 'sauceling', splitCount: 2,
   },
-  sauceling: { label: 'Sauceling', sprite: 'e06_sauceling', color: 0xe74c3c, hp: 20, speed: 150, armor: 0, reward: 2, radius: 14 },
+  sauceling: { label: 'Sauceling', sprite: 'e06_sauceling', color: 0xe74c3c, hp: 20, speed: 150, armor: 0, reward: 2, radius: 15 },
   espresso: {
     label: 'Espresso Golem', sprite: 'e07_espresso', color: 0x3e2723,
-    hp: 230, speed: 74, armor: 3, reward: 35, radius: 34, boss: true,
+    hp: 230, speed: 74, armor: 3, reward: 35, radius: 37, boss: true,
   },
 };
 
@@ -119,6 +122,14 @@ export const WAVES = [
   { spawns: [{ type: 'parmesano', count: 1, intervalMs: 0, delayMs: 500 }, { type: 'pizzarino', count: 12, intervalMs: 400, delayMs: 0 }] },
 ];
 
+// Per-group spawn caps for endless mode. Without these, wave size keeps
+// growing forever (at wave ~58 the raw formula wants 96 pizzarinos alone)
+// which is rough on low-end phones — lots of simultaneous sprites + HP
+// bars. Capping counts keeps difficulty scaling through HP/armor (via
+// hpScale, uncapped) instead of unbounded enemy counts. Saucezilla is
+// capped lower since each one becomes 2 Saucelings on death.
+const SPAWN_CAPS = { pizzarino: 40, spaghetto: 30, meatballino: 24, saucezilla: 10, parmesano: 6, espresso: 6 };
+
 /**
  * Waves past the scripted list scale up forever (idle-game endless mode).
  * Past wave ~10 this also introduces Saucezilla (a splitter — killing it
@@ -132,17 +143,18 @@ export function waveForIndex(i) {
   const scale = 1 + n * 0.22;
   const bossWave = n % 4 === 0;
   const bossType = bossWave ? (((n / 4) % 2 === 1) ? 'parmesano' : 'espresso') : null;
+  const cap = (type, count) => Math.min(count, SPAWN_CAPS[type] ?? count);
 
   const spawns = [
-    { type: 'pizzarino', count: Math.round(8 * scale), intervalMs: 380, delayMs: 0 },
-    { type: 'spaghetto', count: Math.round(5 * scale), intervalMs: 350, delayMs: 1200 },
-    { type: 'meatballino', count: Math.round(4 * scale), intervalMs: 900, delayMs: 2000 },
+    { type: 'pizzarino', count: cap('pizzarino', Math.round(8 * scale)), intervalMs: 380, delayMs: 0 },
+    { type: 'spaghetto', count: cap('spaghetto', Math.round(5 * scale)), intervalMs: 350, delayMs: 1200 },
+    { type: 'meatballino', count: cap('meatballino', Math.round(4 * scale)), intervalMs: 900, delayMs: 2000 },
   ];
   if (n >= 3) {
-    spawns.push({ type: 'saucezilla', count: Math.max(1, Math.round(n / 3)), intervalMs: 1400, delayMs: 2800 });
+    spawns.push({ type: 'saucezilla', count: cap('saucezilla', Math.max(1, Math.round(n / 3))), intervalMs: 1400, delayMs: 2800 });
   }
   if (bossType) {
-    spawns.push({ type: bossType, count: Math.floor(n / 4), intervalMs: 1500, delayMs: 500 });
+    spawns.push({ type: bossType, count: cap(bossType, Math.floor(n / 4)), intervalMs: 1500, delayMs: 500 });
   }
 
   return { spawns, hpScale: scale }; // GameScene multiplies enemy HP by this for endless waves

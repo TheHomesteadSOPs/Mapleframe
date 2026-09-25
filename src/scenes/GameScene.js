@@ -12,6 +12,13 @@ const NEXT_WAVE_DELAY_MS = 6000;
 const SPEED_STEPS = [1, 2, 3];
 const TOWER_DISPLAY_SIZE = 75; // 60px base * 1.25 — Ian wanted towers ~25% bigger
 const hex = (n) => '#' + n.toString(16).padStart(6, '0');
+// Hard cap on simultaneous alive enemies — each one owns a Graphics
+// object redrawn every frame for its HP bar, and every tower checks
+// distance to every alive enemy each frame, so this is the main lever
+// for keeping very late endless waves smooth on low-end phones. Queued
+// spawns just wait a beat once this is hit (see update()) rather than
+// being dropped, so nothing is skipped, it's just paced out.
+const MAX_ALIVE_ENEMIES = 60;
 
 export class GameScene extends Phaser.Scene {
   constructor() { super('Game'); }
@@ -353,8 +360,11 @@ export class GameScene extends Phaser.Scene {
       this.waveBanner.setText(`Next wave in ${Math.ceil(remain / 1000)}s`);
       if (remain <= 0) this.startWave();
     } else {
+      let aliveCount = this.enemies.reduce((n, e) => n + (e.alive ? 1 : 0), 0);
       while (this.pendingSpawns.length && this.pendingSpawns[0].at <= this.gameNow) {
+        if (aliveCount >= MAX_ALIVE_ENEMIES) break; // wait for room — nothing is dropped, just paced out
         this.spawnEnemy(this.pendingSpawns.shift().type);
+        aliveCount += 1;
       }
       if (!this.pendingSpawns.length && this.enemies.every((e) => !e.alive)) {
         this.enemies = [];
