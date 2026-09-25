@@ -21,11 +21,13 @@ export const TOWER_SLOTS = [
   { x: 150, y: 300 },  // ~100px from path — reachable by every starter tower
   { x: 380, y: 320 },  // ~100px
   { x: 460, y: 530 },  // ~90px
-  { x: 730, y: 280 },  // ~90px
-  { x: 840, y: 560 },  // ~100px
+  { x: 730, y: 280 },  // ~110px
+  { x: 870, y: 555 },  // ~90px — moved in from (840,560)/~122px, was out of
+                        // range for rolling pins (range 130)
   { x: 1040, y: 320 }, // ~80px
   { x: 1120, y: 620 }, // ~80px
-  { x: 780, y: 590 },  // ~187px — ladle only, a deliberate "advanced" pad
+  { x: 700, y: 480 },  // ~90px — moved in from (780,590)/~187px, was out of
+                        // range for every tower except the ladle
 ];
 
 // ── Towers ──────────────────────────────────────────────────
