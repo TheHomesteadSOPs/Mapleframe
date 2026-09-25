@@ -18,7 +18,7 @@ const DEFAULTS = {
   bestScore: 0,
   bestWave: 0,
   upgrades: {},            // e.g. { damage: 3, fireRate: 1 }
-  settings: { muted: false },
+  settings: { muted: false, tutorialSeen: false },
   stats: { runs: 0, playSeconds: 0 },
   lastSeen: 0,             // timestamp, for offline earnings / daily rewards
   lastDailyClaim: 0,

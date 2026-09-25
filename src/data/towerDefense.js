@@ -87,6 +87,22 @@ export const ENEMY_DEFS = {
   meatballino: { label: 'Meatballino', sprite: 'e02_meatballino', color: 0x8a4a2c, hp: 75, speed: 52, armor: 2, reward: 8, radius: 26 },
   spaghetto: { label: 'Spaghetto', sprite: 'e03_spaghetto', color: 0xf2c94c, hp: 30, speed: 122, armor: 0, reward: 4, radius: 20 },
   parmesano: { label: 'Parmesano', sprite: 'e04_parmesano', color: 0xe0c05a, hp: 320, speed: 38, armor: 5, reward: 30, radius: 36, boss: true },
+
+  // ── Endless-mode variety (past wave 8) — not just bigger numbers.
+  // Saucezilla splits into two fast Saucelings on death, so towers that
+  // one-shot it don't actually clear the lane; Espresso Golem is a
+  // second boss archetype (fast + tanky vs. Parmesano's slow + armored),
+  // so a wall built to counter one boss type struggles against the other.
+  saucezilla: {
+    label: 'Saucezilla', sprite: 'e05_saucezilla', color: 0xc0392b,
+    hp: 140, speed: 60, armor: 1, reward: 10, radius: 30,
+    splitOnDeath: 'sauceling', splitCount: 2,
+  },
+  sauceling: { label: 'Sauceling', sprite: 'e06_sauceling', color: 0xe74c3c, hp: 20, speed: 150, armor: 0, reward: 2, radius: 14 },
+  espresso: {
+    label: 'Espresso Golem', sprite: 'e07_espresso', color: 0x3e2723,
+    hp: 230, speed: 74, armor: 3, reward: 35, radius: 34, boss: true,
+  },
 };
 
 // ── Waves ───────────────────────────────────────────────────
@@ -103,19 +119,31 @@ export const WAVES = [
   { spawns: [{ type: 'parmesano', count: 1, intervalMs: 0, delayMs: 500 }, { type: 'pizzarino', count: 12, intervalMs: 400, delayMs: 0 }] },
 ];
 
-/** Waves past the scripted list scale up forever (idle-game endless mode). */
+/**
+ * Waves past the scripted list scale up forever (idle-game endless mode).
+ * Past wave ~10 this also introduces Saucezilla (a splitter — killing it
+ * spawns 2 fast Saucelings) and alternates the boss every 4 waves between
+ * Parmesano (slow tank) and Espresso Golem (fast bruiser), so the late
+ * game asks for a different defense, not just a bigger one.
+ */
 export function waveForIndex(i) {
   if (i < WAVES.length) return WAVES[i];
   const n = i - WAVES.length + 1;
   const scale = 1 + n * 0.22;
-  const boss = n % 4 === 0;
-  return {
-    spawns: [
-      { type: 'pizzarino', count: Math.round(8 * scale), intervalMs: 380, delayMs: 0 },
-      { type: 'spaghetto', count: Math.round(5 * scale), intervalMs: 350, delayMs: 1200 },
-      { type: 'meatballino', count: Math.round(4 * scale), intervalMs: 900, delayMs: 2000 },
-      ...(boss ? [{ type: 'parmesano', count: Math.floor(n / 4), intervalMs: 1500, delayMs: 500 }] : []),
-    ],
-    hpScale: scale, // GameScene multiplies enemy HP by this for endless waves
-  };
+  const bossWave = n % 4 === 0;
+  const bossType = bossWave ? (((n / 4) % 2 === 1) ? 'parmesano' : 'espresso') : null;
+
+  const spawns = [
+    { type: 'pizzarino', count: Math.round(8 * scale), intervalMs: 380, delayMs: 0 },
+    { type: 'spaghetto', count: Math.round(5 * scale), intervalMs: 350, delayMs: 1200 },
+    { type: 'meatballino', count: Math.round(4 * scale), intervalMs: 900, delayMs: 2000 },
+  ];
+  if (n >= 3) {
+    spawns.push({ type: 'saucezilla', count: Math.max(1, Math.round(n / 3)), intervalMs: 1400, delayMs: 2800 });
+  }
+  if (bossType) {
+    spawns.push({ type: bossType, count: Math.floor(n / 4), intervalMs: 1500, delayMs: 500 });
+  }
+
+  return { spawns, hpScale: scale }; // GameScene multiplies enemy HP by this for endless waves
 }

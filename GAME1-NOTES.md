@@ -1,20 +1,20 @@
 # Game 1 — design notes
 
-*September 2026. Working title: "Nonna's Last Lasagna" → see naming below.*
+*September 2026. Final name: **Nonna's Last Stand**.*
 
-## Naming shortlist
+## Naming — locked in
 
-You were so-so on "Nonna's Last Lasagna." Some alternatives, all still available as far as I can tell from a quick search:
+Went with **Nonna's Last Stand** from the shortlist below — clean, funny, and tells you it's a defense game. `GAME.title` in `src/config.js` is updated everywhere the display name shows (menu, rotate-overlay text, etc).
 
 | Name | Why |
 |---|---|
-| **Nonna's Last Stand** ⭐ | Clean, funny, and it tells you it's a defense game. My pick. |
+| **Nonna's Last Stand** ✅ chosen | Clean, funny, and it tells you it's a defense game. |
 | Sauce Boss | Short and punchy — works as a brand you could reuse for a sequel. |
 | Kitchen Meltdown | Bigger "chaos" energy, less specifically Italian. |
 | Mamma Mia! Tower Defense | Very on-the-nose but very clickable as a thumbnail/title. |
 | Pasta Patrol | Playful, alliterative, slightly less punchy than the others. |
 
-The code currently uses the internal id `nonnas-kitchen` (in `src/config.js` → `GAME.id`) and the display title `"Nonna's Kitchen Defense"`. Renaming later is a one-line change to `GAME.title`; changing `GAME.id` after publishing would reset save data, so we should lock that in before Full Launch.
+The code still uses the internal save-data id `nonnas-kitchen` (in `src/config.js` → `GAME.id`) — that's locked separately and staying as-is, since changing it after publishing would reset players' save data. Only the display title changed.
 
 ## What's in the game
 
@@ -49,6 +49,23 @@ I ran it headless: built towers, fought through multiple waves, watched gold/liv
 Set up at `Mapleframe/art-pipeline/`, reusing your KidsBooksAutomation OpenRouter worker as-is. 10 reference-image jobs are queued (4 enemies, 4 towers, Nonna, one kitchen background), each a single 2K image via `google/gemini-3-pro-image`, on a solid magenta background so I can key out transparency. Cost should run about $1.50–2 total, based on the $0.13/image your book jobs showed.
 
 **To run it:** double-click `art-pipeline/start_worker.bat` and leave the window open. It'll process all 10 jobs and can then sit there for future batches. Tell me when it's done and I'll pull the images, clean them up (transparent background, resized), and wire them into the game — no code changes needed on your end, since the game already prefers real art over placeholders automatically.
+
+## Post-playtest changes (Ian's feedback)
+
+- Fixed two tower pads that were out of range of the lane (one badly, one
+  borderline) — both now sit ~80-90px from the path like the rest.
+- Towers rendered 25% bigger on the board; enemies 10% bigger. Both scale
+  off shared constants/data so future art will follow automatically.
+- Added a speed toggle (1x/2x/3x) and persistent upgrade-cost labels on
+  built towers (color-coded by affordability).
+- Endless mode (past wave 8) now has real variety, not just bigger
+  numbers: **Saucezilla** splits into 2 **Saucelings** on death, and the
+  boss now alternates every 4 waves between **Parmesano** and a new
+  **Espresso Golem** (fast bruiser vs. Parmesano's slow tank). Both new
+  enemies render as placeholders until their art batch is run.
+- Pre-launch pass: added a landscape-only rotate-device prompt (phones
+  held portrait were getting a tiny letterboxed game), and a one-time
+  "tap a tower, then tap a pad" hint for first-time players.
 
 ## Try it locally
 

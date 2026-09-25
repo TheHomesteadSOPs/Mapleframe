@@ -10,6 +10,7 @@ import { PATH, TOWER_SLOTS, TOWER_DEFS, ENEMY_DEFS, towerStatsAtLevel, upgradeCo
 
 const NEXT_WAVE_DELAY_MS = 6000;
 const SPEED_STEPS = [1, 2, 3];
+const TOWER_DISPLAY_SIZE = 75; // 60px base * 1.25 — Ian wanted towers ~25% bigger
 const hex = (n) => '#' + n.toString(16).padStart(6, '0');
 
 export class GameScene extends Phaser.Scene {
@@ -39,6 +40,7 @@ export class GameScene extends Phaser.Scene {
     this.buildSlots();
     this.buildHud(W);
     this.buildTray(W, H);
+    this.buildTutorialHint(W, H);
 
     platform.gameplayStart();
     this.events.once('shutdown', () => platform.gameplayStop());
@@ -175,6 +177,31 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
+  /** One-time nudge for first-time players: tap a tower, then tap a pad.
+   *  Shown once ever (tracked in save data), dismissed on first tower
+   *  build or automatically after a few seconds either way. */
+  buildTutorialHint(W, H) {
+    if (save.data.settings.tutorialSeen) return;
+    this.tutorialHint = this.add.text(W / 2, H - 130,
+      '👆 Tap a tower below, then tap a glowing pad to build it',
+      textStyle(20, GAME.colors.cream, { backgroundColor: '#000000aa', padding: { x: 14, y: 8 } }))
+      .setOrigin(0.5).setDepth(30);
+    this.tweens.add({ targets: this.tutorialHint, y: H - 140, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    this.time.delayedCall(6000, () => this.dismissTutorialHint());
+  }
+
+  dismissTutorialHint() {
+    if (!this.tutorialHint) return;
+    this.tweens.add({
+      targets: this.tutorialHint, alpha: 0, duration: 300,
+      onComplete: () => { this.tutorialHint?.destroy(); this.tutorialHint = null; },
+    });
+    if (!save.data.settings.tutorialSeen) {
+      save.data.settings.tutorialSeen = true;
+      save.write();
+    }
+  }
+
   // ── Interaction ─────────────────────────────────────────
   onSlotTapped(slot) {
     if (this.over) return;
@@ -186,11 +213,12 @@ export class GameScene extends Phaser.Scene {
       slot.built = { type: this.selectedTowerType, level: 1, cooldown: 0 };
       const key = textureFor(this, def.sprite, `ph_${def.sprite}`);
       slot.art = this.add.image(slot.x, slot.y, key).setDepth(3);
-      slot.art.setScale(Math.min(1, 60 / slot.art.width));
+      slot.art.setScale(Math.min(1, TOWER_DISPLAY_SIZE / slot.art.width));
       slot.pips = this.add.text(slot.x, slot.y + 40, '', textStyle(13, GAME.colors.gold)).setOrigin(0.5).setDepth(3);
       this.updateSlotInfo(slot);
       sfx.play('upgrade');
       burst(this, slot.x, slot.y, def.color, 10);
+      this.dismissTutorialHint();
       this.refreshHud();
     } else {
       const { type, level } = slot.built;
@@ -252,15 +280,18 @@ export class GameScene extends Phaser.Scene {
     this.refreshHud();
   }
 
-  spawnEnemy(type) {
+  /** atDistance lets splits (Saucezilla → Saucelings) spawn where the
+   *  parent died instead of back at the start of the lane. */
+  spawnEnemy(type, { atDistance = 0 } = {}) {
     const def = ENEMY_DEFS[type];
+    const pos = this.posAtDistance(atDistance);
     const key = textureFor(this, def.sprite, `ph_${def.sprite}`);
-    const sprite = this.add.image(PATH[0].x, PATH[0].y, key).setDepth(4);
+    const sprite = this.add.image(pos.x, pos.y, key).setDepth(4);
     sprite.setScale(Math.min(1, (def.radius * 2) / sprite.width));
     const hpBar = this.add.graphics().setDepth(5);
     const hp = Math.round(def.hp * this.hpScale);
     this.enemies.push({
-      type, def, sprite, hpBar, hp, maxHp: hp, distance: 0,
+      type, def, sprite, hpBar, hp, maxHp: hp, distance: atDistance,
       speed: def.speed, radius: def.radius, alive: true,
     });
   }
@@ -299,7 +330,13 @@ export class GameScene extends Phaser.Scene {
     this.wavesScoreAdd(e.def.reward);
     burst(this, e.sprite.x, e.sprite.y, e.def.color, 12);
     sfx.play('coin');
+    const atDistance = e.distance;
     e.sprite.destroy(); e.hpBar.destroy();
+    if (e.def.splitOnDeath) {
+      for (let i = 0; i < (e.def.splitCount ?? 1); i++) {
+        this.spawnEnemy(e.def.splitOnDeath, { atDistance });
+      }
+    }
     this.refreshHud();
   }
 

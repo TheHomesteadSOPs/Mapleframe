@@ -30,6 +30,22 @@ async function start() {
     onAdEnd: () => { sfx.resumeAfterAd(); game.loop.wake(); },
   });
 
+  // 4. Landscape-only: show a rotate prompt (and pause) whenever the play
+  // area is taller than it is wide, e.g. a phone held upright.
+  const rotateOverlay = document.getElementById('rotate-overlay');
+  let rotatedAway = false;
+  const checkOrientation = () => {
+    const portrait = window.innerHeight > window.innerWidth;
+    if (portrait === rotatedAway) return;
+    rotatedAway = portrait;
+    rotateOverlay.style.display = portrait ? 'flex' : 'none';
+    if (portrait) { sfx.pauseForAd(); game.loop.sleep(); }
+    else { sfx.resumeAfterAd(); game.loop.wake(); }
+  };
+  window.addEventListener('resize', checkOrientation);
+  window.addEventListener('orientationchange', checkOrientation);
+  checkOrientation();
+
   // Handy for debugging in the browser console: __game, __platform
   if (import.meta.env.DEV) Object.assign(window, { __game: game, __platform: platform });
 }

@@ -8,10 +8,41 @@
       html, body { margin: 0; padding: 0; height: 100%; background: #10141c; overflow: hidden; }
       #game { width: 100%; height: 100%; }
       canvas { display: block; touch-action: none; }
+
+      /* Landscape-only game: cover the screen with a rotate prompt whenever
+         the play area is taller than it is wide (portrait phones/tablets).
+         Shown/hidden by main.js, which also pauses the game loop while
+         it's up so waves don't run unseen. */
+      #rotate-overlay {
+        display: none;
+        position: fixed; inset: 0;
+        background: #10141c;
+        color: #f4ecd8;
+        z-index: 1000;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        padding: 24px;
+        box-sizing: border-box;
+      }
+      #rotate-overlay .icon { font-size: 56px; margin-bottom: 16px; animation: rotate-hint 1.6s ease-in-out infinite; }
+      #rotate-overlay .title { font-size: 22px; font-weight: bold; margin-bottom: 8px; }
+      #rotate-overlay .sub { font-size: 15px; color: #7d8799; }
+      @keyframes rotate-hint {
+        0%, 100% { transform: rotate(0deg); }
+        50% { transform: rotate(-90deg); }
+      }
     </style>
   </head>
   <body>
     <div id="game"></div>
+    <div id="rotate-overlay">
+      <div class="icon">📱</div>
+      <div class="title">Rotate your device</div>
+      <div class="sub">Nonna's Last Stand plays best in landscape</div>
+    </div>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>
