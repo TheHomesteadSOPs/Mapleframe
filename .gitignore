@@ -6,13 +6,15 @@ release/
 
 # Art pipeline: job files + generated images are working files, not
 # something the repo needs to track. Final processed sprites live in
-# public/assets/td/ instead (committed normally).
-art-pipeline/jobs/
-art-pipeline/output/
-art-pipeline/results/
+# public/assets/<game>/ instead (committed normally).
+# Uses **/ so this also covers games/<name>/art-pipeline/ in the
+# monorepo, not just the root art-pipeline/ (Game 1's).
+**/art-pipeline/jobs/
+**/art-pipeline/output/
+**/art-pipeline/results/
 
 # API keys — never commit these. Keep them local only.
-art-pipeline/openrouter_config.json
+**/art-pipeline/openrouter_config.json
 **/*_config.json
 .env
 .env.*
