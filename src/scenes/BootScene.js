@@ -74,6 +74,31 @@ export class BootScene extends Phaser.Scene {
     // Projectile.
     g.fillStyle(GAME.colors.gold).fillCircle(6, 6, 6);
     g.generateTexture('projectile', 12, 12);
+    g.clear();
+
+    // Sound on/off icons — drawn rather than emoji (🔇/🔊) because some
+    // platforms' emoji fonts don't have a distinct 🔇 glyph and silently
+    // fall back to something that looks identical to 🔊, which made the
+    // mute button look broken even though the actual mute worked fine.
+    // A drawn icon renders identically everywhere.
+    const drawSpeaker = () => {
+      g.fillStyle(0xffffff, 1);
+      g.fillRect(4, 13, 6, 8);
+      g.fillTriangle(10, 13, 20, 5, 20, 29);
+      g.fillTriangle(10, 13, 10, 21, 20, 29);
+    };
+    drawSpeaker();
+    g.lineStyle(3, 0xffffff, 1);
+    g.beginPath(); g.arc(10, 17, 9, Phaser.Math.DegToRad(-40), Phaser.Math.DegToRad(40), false); g.strokePath();
+    g.beginPath(); g.arc(10, 17, 14, Phaser.Math.DegToRad(-40), Phaser.Math.DegToRad(40), false); g.strokePath();
+    g.generateTexture('icon_sound_on', 34, 34);
+    g.clear();
+
+    drawSpeaker();
+    g.lineStyle(4, 0xe14b4b, 1);
+    g.beginPath(); g.moveTo(21, 8); g.lineTo(31, 26); g.strokePath();
+    g.beginPath(); g.moveTo(31, 8); g.lineTo(21, 26); g.strokePath();
+    g.generateTexture('icon_sound_off', 34, 34);
     g.destroy();
   }
 }

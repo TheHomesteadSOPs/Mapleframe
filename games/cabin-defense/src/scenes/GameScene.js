@@ -154,9 +154,9 @@ export class GameScene extends Phaser.Scene {
     this.waveBanner = this.add.text(W / 2, 100, '', textStyle(26, GAME.colors.gold))
       .setOrigin(0.5).setDepth(20);
 
-    const mute = this.add.text(W - 24, 20, '', textStyle(30)).setOrigin(1, 0)
+    const mute = this.add.image(W - 24, 20, 'icon_sound_on').setOrigin(1, 0)
       .setInteractive({ useHandCursor: true }).setDepth(20);
-    const setIcon = () => mute.setText(save.data.settings.muted ? '🔇' : '🔊');
+    const setIcon = () => mute.setTexture(save.data.settings.muted ? 'icon_sound_off' : 'icon_sound_on');
     setIcon();
     mute.on('pointerdown', () => {
       save.data.settings.muted = !save.data.settings.muted;

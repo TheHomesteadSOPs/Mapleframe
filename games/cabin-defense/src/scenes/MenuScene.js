@@ -34,8 +34,8 @@ export class MenuScene extends Phaser.Scene {
       return { id, lvl, btn };
     });
 
-    const mute = this.add.text(W - 30, 30, '', textStyle(34)).setOrigin(1, 0).setInteractive({ useHandCursor: true });
-    const setIcon = () => mute.setText(save.data.settings.muted ? '🔇' : '🔊');
+    const mute = this.add.image(W - 30, 30, 'icon_sound_on').setOrigin(1, 0).setInteractive({ useHandCursor: true });
+    const setIcon = () => mute.setTexture(save.data.settings.muted ? 'icon_sound_off' : 'icon_sound_on');
     setIcon();
     mute.on('pointerdown', () => {
       save.data.settings.muted = !save.data.settings.muted;
