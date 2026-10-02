@@ -3,32 +3,50 @@
 //  waves. All tuning lives here — GameScene.js just reads it.
 // ─────────────────────────────────────────────────────────────
 
-// The lane enemies walk, in logical 1280×720 space. The HUD reserves
-// the top ~100px, so keep waypoints below y=110.
+// The lane enemies walk, in logical 1280×720 space. These are control
+// points that trace the winding tile path painted into the board art
+// (b01_kitchen_board.jpg, drawn at 0.8× so source row 287 sits at y=0);
+// GameScene smooths them into a curve so enemies follow the painted tiles.
+// The right-hand strip (x > ~1150) is reserved for the tower tray.
 export const PATH = [
-  { x: -40, y: 200 },
-  { x: 280, y: 200 },
-  { x: 280, y: 440 },
-  { x: 620, y: 440 },
-  { x: 620, y: 170 },
-  { x: 960, y: 170 },
-  { x: 960, y: 540 },
-  { x: 1200, y: 540 },
+  { x: -32, y: 690 },
+  { x: 48, y: 642 },
+  { x: 176, y: 578 },
+  { x: 304, y: 521 },
+  { x: 432, y: 510 },
+  { x: 560, y: 558 },
+  { x: 688, y: 578 },
+  { x: 768, y: 540 },
+  { x: 800, y: 478 },
+  { x: 768, y: 406 },
+  { x: 708, y: 348 },
+  { x: 640, y: 290 },
+  { x: 560, y: 242 },
+  { x: 480, y: 206 },
+  { x: 416, y: 162 },
+  { x: 424, y: 110 },
+  { x: 496, y: 74 },
+  { x: 592, y: 90 },
+  { x: 696, y: 146 },
+  { x: 792, y: 170 },
+  { x: 832, y: 122 },
+  { x: 880, y: 78 },
+  { x: 948, y: 65 },
 ];
 
-// Buildable pads, placed off the lane. Each holds at most one tower.
+// Buildable pads on the open floor beside the lane. Each holds one tower.
+// All are within reach of the starter towers.
 export const TOWER_SLOTS = [
-  { x: 150, y: 300 },  // ~100px from path — reachable by every starter tower
-  { x: 380, y: 320 },  // ~100px
-  { x: 460, y: 530 },  // ~90px
-  { x: 730, y: 280 },  // ~110px
-  { x: 1060, y: 460 }, // ~80px — moved in from (840,560)/~122px (was out of
-                        // range for rolling pins), then off (870,555)/~90px
-                        // (visually overlapped the blender tray icon)
-  { x: 1040, y: 320 }, // ~80px
-  { x: 1120, y: 620 }, // ~80px
-  { x: 700, y: 480 },  // ~90px — moved in from (780,590)/~187px, was out of
-                        // range for every tower except the ladle
+  { x: 330, y: 445 },
+  { x: 560, y: 350 },
+  { x: 690, y: 470 },
+  { x: 895, y: 345 },
+  { x: 880, y: 262 },
+  { x: 320, y: 170 },
+  { x: 560, y: 655 },
+  { x: 830, y: 625 },
+  { x: 940, y: 480 },
+  { x: 965, y: 185 },
 ];
 
 // ── Towers ──────────────────────────────────────────────────
@@ -80,6 +98,9 @@ export function upgradeCost(id, level) {
   return Math.round(TOWER_DEFS[id].cost * LEVEL_COST_MULT[level]);
 }
 
+/** Gold bonus for clearing a wave — keeps the economy ahead of the curve. */
+export const waveClearBonus = (waveNumber) => 12 + waveNumber * 3;
+
 export const MAX_TOWER_LEVEL = LEVEL_MULT.length;
 
 // ── Enemies ─────────────────────────────────────────────────
@@ -106,15 +127,48 @@ export const ENEMY_DEFS = {
     label: 'Espresso Golem', sprite: 'e07_espresso', color: 0x3e2723,
     hp: 230, speed: 74, armor: 3, reward: 35, radius: 37, boss: true,
   },
+
+  // ── Elites (from wave 20) — each one asks a different question of the
+  // defense. They aren't bosses, but leaking one costs 2 lives.
+  // garlico: heavy armor shrugs off weak/rapid hits (Blender, Rolling Pin).
+  garlico: {
+    label: 'Garlico Knight', blurb: 'Heavy armor — weak hits barely scratch it', sprite: 'e08_garlico', color: 0xa78bd4,
+    hp: 420, speed: 46, armor: 9, reward: 40, radius: 36, elite: true, leak: 2,
+  },
+  // cannolo: periodically bursts forward, slipping past slow, high-wind-up towers.
+  cannolo: {
+    label: 'Cannolo Dasher', blurb: 'Dashes forward in sudden bursts', sprite: 'e09_cannolo', color: 0xe8912d,
+    hp: 150, speed: 80, armor: 0, reward: 24, radius: 34, elite: true, leak: 2,
+    dash: { every: 3200, duration: 900, mult: 2.8 },
+  },
+  // tiramisu: heals every enemy near it — kill the medic first.
+  tiramisu: {
+    label: 'Tiramisu Medic', blurb: 'Heals nearby enemies — focus it down', sprite: 'e10_tiramisu', color: 0xe0699a,
+    hp: 260, speed: 56, armor: 1, reward: 45, radius: 30, elite: true, leak: 2,
+    heal: { radius: 170, pctPerSec: 0.07 },
+  },
+  // gelato: its chill slows the fire rate of every tower within reach.
+  gelato: {
+    label: 'Gelato Frostling', blurb: 'Chills towers nearby, slowing their fire rate', sprite: 'e11_gelato', color: 0x5ed3f0,
+    hp: 300, speed: 62, armor: 2, reward: 45, radius: 34, elite: true, leak: 2,
+    chill: { radius: 175, slow: 0.45 },
+  },
+  // prosciutto: slippery — a chunk of shots simply miss it.
+  prosciutto: {
+    label: 'Prosciutto Phantom', blurb: 'Slippery — many shots miss it', sprite: 'e12_prosciutto', color: 0xb8b4ee,
+    hp: 210, speed: 84, armor: 0, reward: 32, radius: 34, elite: true, leak: 2,
+    evade: 0.38,
+  },
 };
 
 // ── Waves ───────────────────────────────────────────────────
 // spawns: list of { type, count, intervalMs, delayMs }. delayMs is the
 // gap before this group starts spawning, relative to the wave start.
 export const WAVES = [
-  { spawns: [{ type: 'pizzarino', count: 6, intervalMs: 700, delayMs: 0 }] },
-  { spawns: [{ type: 'pizzarino', count: 8, intervalMs: 600, delayMs: 0 }, { type: 'spaghetto', count: 3, intervalMs: 500, delayMs: 1500 }] },
-  { spawns: [{ type: 'meatballino', count: 4, intervalMs: 1200, delayMs: 0 }, { type: 'pizzarino', count: 6, intervalMs: 500, delayMs: 800 }] },
+  { spawns: [{ type: 'pizzarino', count: 5, intervalMs: 1100, delayMs: 0 }] },
+  { spawns: [{ type: 'pizzarino', count: 7, intervalMs: 800, delayMs: 0 }] },
+  { spawns: [{ type: 'pizzarino', count: 6, intervalMs: 650, delayMs: 0 }, { type: 'spaghetto', count: 3, intervalMs: 600, delayMs: 2500 }] },
+  { spawns: [{ type: 'meatballino', count: 3, intervalMs: 1400, delayMs: 0 }, { type: 'pizzarino', count: 6, intervalMs: 600, delayMs: 800 }] },
   { spawns: [{ type: 'spaghetto', count: 12, intervalMs: 400, delayMs: 0 }] },
   { spawns: [{ type: 'pizzarino', count: 10, intervalMs: 450, delayMs: 0 }, { type: 'meatballino', count: 5, intervalMs: 1000, delayMs: 1000 }, { type: 'spaghetto', count: 5, intervalMs: 400, delayMs: 2500 }] },
   { spawns: [{ type: 'meatballino', count: 9, intervalMs: 750, delayMs: 0 }] },
@@ -128,7 +182,12 @@ export const WAVES = [
 // bars. Capping counts keeps difficulty scaling through HP/armor (via
 // hpScale, uncapped) instead of unbounded enemy counts. Saucezilla is
 // capped lower since each one becomes 2 Saucelings on death.
-const SPAWN_CAPS = { pizzarino: 40, spaghetto: 30, meatballino: 24, saucezilla: 10, parmesano: 6, espresso: 6 };
+const SPAWN_CAPS = { pizzarino: 40, spaghetto: 30, meatballino: 24, saucezilla: 10, parmesano: 6, espresso: 6, garlico: 10, cannolo: 12, tiramisu: 6, gelato: 6, prosciutto: 10 };
+
+// Elite mobs join the rotation at wave 20 (index 19). Two types per wave,
+// cycling through all five, so a player meets every one within three waves.
+export const ELITE_START_INDEX = 19;
+const ELITES = ['garlico', 'cannolo', 'tiramisu', 'gelato', 'prosciutto'];
 
 /**
  * Waves past the scripted list scale up forever (idle-game endless mode).
@@ -152,6 +211,14 @@ export function waveForIndex(i) {
   ];
   if (n >= 3) {
     spawns.push({ type: 'saucezilla', count: cap('saucezilla', Math.max(1, Math.round(n / 3))), intervalMs: 1400, delayMs: 2800 });
+  }
+  if (i >= ELITE_START_INDEX) {
+    const k = i - ELITE_START_INDEX;
+    for (let j = 0; j < 2; j++) {
+      const type = ELITES[(k * 2 + j) % ELITES.length];
+      const count = cap(type, 2 + Math.floor(k / 2) + (type === 'cannolo' || type === 'prosciutto' ? 2 : 0));
+      spawns.push({ type, count, intervalMs: type === 'garlico' ? 1300 : 900, delayMs: 1500 + j * 1200 });
+    }
   }
   if (bossType) {
     spawns.push({ type: bossType, count: cap(bossType, Math.floor(n / 4)), intervalMs: 1500, delayMs: 500 });

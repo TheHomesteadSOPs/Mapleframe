@@ -96,3 +96,27 @@ export function panel(scene, x, y, w, h, alpha = 0.9) {
     .fillStyle(GAME.colors.panel, alpha)
     .fillRoundedRect(x - w / 2, y - h / 2, w, h, 20);
 }
+
+/**
+ * "<coin icon> 123" label that lays itself out after every setText.
+ * originX 0 = left-aligned at x, 0.5 = centred on x.
+ */
+export function coinText(scene, x, y, size = 30, color = GAME.colors.gold, originX = 0) {
+  const c = scene.add.container(x, y);
+  const icon = scene.add.image(0, 0, 'icon_coin');
+  const iconSize = Math.round(size * 1.05);
+  icon.setDisplaySize(iconSize * 30 / 32, iconSize);
+  const txt = scene.add.text(0, 0, '', textStyle(size, color, { stroke: '#000000', strokeThickness: Math.max(3, size / 8) })).setOrigin(0, 0.5);
+  c.add([icon, txt]);
+  const gap = Math.round(size * 0.25);
+  c.setText = (s) => {
+    txt.setText(String(s));
+    const total = icon.displayWidth + gap + txt.width;
+    const left = -originX * total;
+    icon.setPosition(left + icon.displayWidth / 2, 0);
+    txt.setPosition(left + icon.displayWidth + gap, 0);
+    return c;
+  };
+  c.setColor = (col) => { txt.setColor(hex(col)); return c; };
+  return c;
+}

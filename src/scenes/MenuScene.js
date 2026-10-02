@@ -3,34 +3,42 @@ import { GAME } from '../config.js';
 import { save } from '../systems/save.js';
 import { sfx } from '../systems/sfx.js';
 import { upgrades, UPGRADE_DEFS } from '../systems/upgrades.js';
-import { button, textStyle, fmt, panel, burst } from '../ui/widgets.js';
+import { button, textStyle, fmt, panel, burst, coinText } from '../ui/widgets.js';
 import { hasArt, MENU_BG_KEY } from '../systems/sprites.js';
 
 export class MenuScene extends Phaser.Scene {
   constructor() { super('Menu'); }
 
   create() {
+    sfx.setMusicTheme("menu");
     const { width: W, height: H } = this.scale;
     this.drawBackdrop(W, H);
 
-    this.add.text(W / 2, 90, GAME.title, textStyle(50, GAME.colors.cream)).setOrigin(0.5);
-    this.add.text(W / 2, 140, `by ${GAME.studio}`, textStyle(22, GAME.colors.muted)).setOrigin(0.5);
+    const outline = (px) => ({ stroke: '#2a1a10', strokeThickness: Math.round(px / 6) });
+    this.add.text(W / 2, 62, GAME.title, textStyle(58, GAME.colors.cream, outline(58))).setOrigin(0.5);
+    this.add.text(W / 2, 108, `by ${GAME.studio}`, textStyle(20, GAME.colors.cream, outline(20))).setOrigin(0.5);
 
-    this.coinText = this.add.text(W / 2, 195, '', textStyle(30, GAME.colors.gold)).setOrigin(0.5);
-    this.add.text(W / 2, 230, `Best wave: ${save.data.bestWave}`, textStyle(20, GAME.colors.muted)).setOrigin(0.5);
+    this.coinText = coinText(this, W / 2, 150, 30, GAME.colors.gold, 0.5);
+    this.bestText = this.add.text(W / 2, 184, `Best wave: ${save.data.bestWave}`,
+      textStyle(20, GAME.colors.cream, outline(20))).setOrigin(0.5);
 
-    button(this, W / 2, 310, '▶  DEFEND THE KITCHEN', () => this.scene.start('Game'),
-      { width: 420, height: 78, fontSize: 32 });
+    button(this, W / 2, 246, 'DEFEND THE KITCHEN', () => this.scene.start('Game'),
+      { width: 520, height: 70, fontSize: 32 });
 
-    this.add.text(W / 2, 400, "Nonna's Pantry — permanent upgrades", textStyle(20, GAME.colors.muted)).setOrigin(0.5);
-    panel(this, W / 2, 560, 1080, 220);
-    this.shop = Object.keys(UPGRADE_DEFS).map((id, i) => {
-      const x = W / 2 - 350 + i * 350;
-      this.add.text(x, 480, UPGRADE_DEFS[id].label, textStyle(24)).setOrigin(0.5);
-      const lvl = this.add.text(x, 512, '', textStyle(18, GAME.colors.muted)).setOrigin(0.5, 0.5).setWordWrapWidth(300, true);
-      const btn = button(this, x, 610, '', () => {
-        if (upgrades.buy(id)) { sfx.play('upgrade'); burst(this, x, 610); this.refresh(); }
-      }, { width: 260, height: 64, fontSize: 24, color: 0x2f8f5b });
+    this.add.text(W / 2, 308, "Nonna's Pantry: permanent upgrades", textStyle(20, GAME.colors.cream, outline(20))).setOrigin(0.5);
+    panel(this, W / 2, 514, 1190, 372, 0.88);
+    const ids = Object.keys(UPGRADE_DEFS);
+    const cols = 4, cw = 284, ch = 166;
+    this.shop = ids.map((id, i) => {
+      const x = W / 2 - ((cols - 1) * cw) / 2 + (i % cols) * cw;
+      const y = 424 + Math.floor(i / cols) * (ch + 8);
+      const card = this.add.graphics();
+      card.fillStyle(0x2a3243, 0.9).fillRoundedRect(x - 130, y - ch / 2, 260, ch, 14);
+      this.add.text(x, y - 58, UPGRADE_DEFS[id].label, textStyle(22)).setOrigin(0.5);
+      const lvl = this.add.text(x, y - 18, '', textStyle(15, 0xb5bfd0, { align: 'center', wordWrap: { width: 240 } })).setOrigin(0.5);
+      const btn = button(this, x, y + 46, '', () => {
+        if (upgrades.buy(id)) { sfx.play('upgrade'); burst(this, x, y + 46); this.refresh(); }
+      }, { width: 228, height: 44, fontSize: 18, color: 0x2f8f5b });
       return { id, lvl, btn };
     });
 
@@ -44,16 +52,16 @@ export class MenuScene extends Phaser.Scene {
       setIcon();
     });
 
-    this.add.text(20, H - 20, `v${GAME.version}`, textStyle(16, GAME.colors.muted)).setOrigin(0, 1);
+    this.add.text(20, H - 14, `v${GAME.version}`, textStyle(15, GAME.colors.cream, { stroke: '#2a1a10', strokeThickness: 3 })).setOrigin(0, 1);
     this.refresh();
   }
 
   refresh() {
-    this.coinText.setText(`🪙 ${fmt(save.data.coins)} pantry coins`);
+    this.coinText.setText(`${fmt(save.data.coins)} pantry coins`);
     for (const { id, lvl, btn } of this.shop) {
-      lvl.setText(`Lv ${upgrades.level(id)} · ${UPGRADE_DEFS[id].desc}`);
+      lvl.setText(`Level ${upgrades.level(id)} / ${UPGRADE_DEFS[id].max}\n${UPGRADE_DEFS[id].desc}`);
       if (upgrades.isMaxed(id)) btn.setLabel('MAX').setEnabled(false);
-      else btn.setLabel(`🪙 ${fmt(upgrades.cost(id))}`).setEnabled(upgrades.canBuy(id));
+      else btn.setLabel(`Buy: ${fmt(upgrades.cost(id))} coins`).setEnabled(upgrades.canBuy(id));
     }
   }
 
@@ -61,7 +69,7 @@ export class MenuScene extends Phaser.Scene {
     if (hasArt(this, MENU_BG_KEY)) {
       const bg = this.add.image(W / 2, H / 2, MENU_BG_KEY);
       bg.setScale(Math.max(W / bg.width, H / bg.height));
-      this.add.rectangle(W / 2, H / 2, W, H, 0x10141c, 0.62); // legibility scrim
+      this.add.rectangle(W / 2, H / 2, W, H, 0x10141c, 0.5); // legibility scrim
       return;
     }
     for (let i = 0; i < 10; i++) {

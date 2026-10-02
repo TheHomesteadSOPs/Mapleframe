@@ -76,6 +76,23 @@ export class BootScene extends Phaser.Scene {
     g.generateTexture('projectile', 12, 12);
     g.clear();
 
+    // Coin icon — drawn instead of the 🪙 emoji, which is missing from many
+    // Windows/Android emoji fonts and renders as an empty box there.
+    g.fillStyle(0xb9801a).fillCircle(15, 16, 14);
+    g.fillStyle(GAME.colors.gold).fillCircle(15, 14, 14);
+    g.lineStyle(2, 0xb9801a, 1).strokeCircle(15, 14, 9.5);
+    g.fillStyle(0xfff0b0, 0.9).fillRect(13, 8, 4, 12);
+    g.generateTexture('icon_coin', 30, 32);
+    g.clear();
+
+    // Tower pad — a soft plate on the floor where a tower can go.
+    g.fillStyle(0x000000, 0.18).fillEllipse(44, 36, 80, 44);
+    g.fillStyle(0xfff6dc, 0.55).fillEllipse(44, 32, 76, 42);
+    g.lineStyle(3, 0xffffff, 0.9).strokeEllipse(44, 32, 76, 42);
+    g.lineStyle(2, 0xd9482b, 0.7).strokeEllipse(44, 32, 54, 28);
+    g.generateTexture('pad', 88, 64);
+    g.clear();
+
     // Sound on/off icons — drawn rather than emoji (🔇/🔊) because some
     // platforms' emoji fonts don't have a distinct 🔇 glyph and silently
     // fall back to something that looks identical to 🔊, which made the
