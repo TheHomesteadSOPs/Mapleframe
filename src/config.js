@@ -7,7 +7,7 @@ export const GAME = {
   id: 'nonnas-kitchen',       // used as the save-data key — locked, see NOTES.md
   title: "Nonna's Last Stand", // final name, picked from the GAME1-NOTES.md shortlist
   studio: 'Mapleframe Games',
-  version: '0.5.0',
+  version: '0.6.0',
 
   // Logical resolution. Phaser scales this to fit any screen.
   width: 1280,

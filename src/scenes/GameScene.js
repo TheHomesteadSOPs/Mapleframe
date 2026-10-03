@@ -88,7 +88,7 @@ export class GameScene extends Phaser.Scene {
     this.buildTutorial(W, H);
 
     platform.gameplayStart();
-    this.events.once('shutdown', () => platform.gameplayStop());
+    this.events.once('shutdown', () => { platform.gameplayStop(); sfx.setMusicPaused(false); });
 
     this.scheduleNextWave(2500);
     this.refreshHud();
@@ -219,6 +219,7 @@ export class GameScene extends Phaser.Scene {
   pauseGame() {
     this.paused = true;
     this.time.paused = true;
+    sfx.setMusicPaused(true);
     platform.gameplayStop();
     const { width: W, height: H } = this.scale;
     const c = this.add.container(0, 0).setDepth(100);
@@ -258,6 +259,7 @@ export class GameScene extends Phaser.Scene {
     this.pauseUi = null;
     this.paused = false;
     this.time.paused = false;
+    sfx.setMusicPaused(false);
     platform.gameplayStart();
   }
 
@@ -270,6 +272,7 @@ export class GameScene extends Phaser.Scene {
     if (this.quitting) return;
     this.quitting = true;
     this.time.paused = false;
+    sfx.setMusicPaused(false);
     const d = save.data;
     d.coins += this.runCoins();
     d.stats.runs += 1;
@@ -581,7 +584,7 @@ export class GameScene extends Phaser.Scene {
     // Tiny recoil + shot sound.
     this.tweens.add({ targets: slot.art, scale: slot.baseScale * 1.08, duration: 50, yoyo: true });
     const sound = { rollingpin: 'shoot_pin', grater: 'shoot_grater', ladle: 'shoot_ladle', blender: 'shoot_blender' }[slot.built.type];
-    if (sound) sfx.play(sound);
+    if (sound) sfx.play(sound, 1 + Math.min(slot.built.level - 1, 6) * 0.03);
   }
 
   damageEnemy(e, amount) {
